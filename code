@@ -1,0 +1,156 @@
+import pygame
+import sys
+
+# Initialize
+pygame.init()
+WIDTH, HEIGHT = 800, 500
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("2 Player Ping Pong")
+clock = pygame.time.Clock()
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+# Game Settings
+paddle_width, paddle_height = 10, 100
+ball_size = 15
+win_score = 5
+
+# Fonts
+font = pygame.font.SysFont(None, 40)
+big_font = pygame.font.SysFont(None, 70)
+
+# Players
+p1 = pygame.Rect(30, HEIGHT//2 - paddle_height//2, paddle_width, paddle_height)
+p2 = pygame.Rect(WIDTH - 40, HEIGHT//2 - paddle_height//2, paddle_width, paddle_height)
+ball = pygame.Rect(WIDTH//2, HEIGHT//2, ball_size, ball_size)
+ball_speed = [5, 5]
+
+score1 = 0
+score2 = 0
+game_state = "start"  # Can be 'start', 'play', 'game_over'
+
+# Reset positions
+def reset_positions():
+    p1.y = HEIGHT//2 - paddle_height//2
+    p2.y = HEIGHT//2 - paddle_height//2
+    ball.x = WIDTH//2
+    ball.y = HEIGHT//2
+    ball_speed[0] *= -1
+
+# Draw paddles, ball, score
+def draw_game():
+    screen.fill(BLACK)
+
+    # Center line
+    pygame.draw.aaline(screen, WHITE, (WIDTH//2, 0), (WIDTH//2, HEIGHT))
+
+    # Center circle
+    pygame.draw.circle(screen, WHITE, (WIDTH//2, HEIGHT//2), 60, 2)
+
+    # Center dot
+    pygame.draw.circle(screen, WHITE, (WIDTH//2, HEIGHT//2), 5)
+
+    # Draw paddles and ball
+    pygame.draw.rect(screen, WHITE, p1)
+    pygame.draw.rect(screen, WHITE, p2)
+    pygame.draw.ellipse(screen, WHITE, ball)
+
+    # Draw score
+    s1 = font.render(str(score1), True, WHITE)
+    s2 = font.render(str(score2), True, WHITE)
+    screen.blit(s1, (WIDTH//2 - 40, 20))
+    screen.blit(s2, (WIDTH//2 + 20, 20))
+
+# Start screen
+def show_start_screen():
+    screen.fill(BLACK)
+    title = big_font.render("2 Player Ping Pong", True, WHITE)
+    inst1 = font.render("Player 1: W/S to move", True, WHITE)
+    inst2 = font.render("Player 2: UP/DOWN to move", True, WHITE)
+    inst3 = font.render(f"First to {win_score} points wins", True, WHITE)
+    start = font.render("Press SPACE to start", True, WHITE)
+    screen.blit(title, (WIDTH//2 - title.get_width()//2, 50))
+    screen.blit(inst1, (WIDTH//2 - inst1.get_width()//2, 150))
+    screen.blit(inst2, (WIDTH//2 - inst2.get_width()//2, 200))
+    screen.blit(inst3, (WIDTH//2 - inst3.get_width()//2, 250))
+    screen.blit(start, (WIDTH//2 - start.get_width()//2, 350))
+
+# Game over screen
+def show_game_over(winner):
+    screen.fill(BLACK)
+    over = big_font.render(f"{winner} Wins!", True, WHITE)
+    restart = font.render("Press R to Restart", True, WHITE)
+    screen.blit(over, (WIDTH//2 - over.get_width()//2, 180))
+    screen.blit(restart, (WIDTH//2 - restart.get_width()//2, 260))
+
+# Game loop
+running = True
+while running:
+    screen.fill(BLACK)
+
+    if game_state == "start":
+        show_start_screen()
+
+    elif game_state == "play":
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w] and p1.top > 0:
+            p1.move_ip(0, -6)
+        if keys[pygame.K_s] and p1.bottom < HEIGHT:
+            p1.move_ip(0, 6)
+        if keys[pygame.K_UP] and p2.top > 0:
+            p2.move_ip(0, -6)
+        if keys[pygame.K_DOWN] and p2.bottom < HEIGHT:
+            p2.move_ip(0, 6)
+
+        ball.x += ball_speed[0]
+        ball.y += ball_speed[1]
+
+        # Bounce on top/bottom
+        if ball.top <= 0 or ball.bottom >= HEIGHT:
+            ball_speed[1] *= -1
+
+        # Bounce on paddles
+        if ball.colliderect(p1) or ball.colliderect(p2):
+            ball_speed[0] *= -1
+
+        # Score
+        if ball.left <= 0:
+            score2 += 1
+            reset_positions()
+        if ball.right >= WIDTH:
+            score1 += 1
+            reset_positions()
+
+        draw_game()
+
+        # Check win
+        if score1 >= win_score:
+            game_state = "game_over"
+            winner = "Player 1"
+        elif score2 >= win_score:
+            game_state = "game_over"
+            winner = "Player 2"
+
+    elif game_state == "game_over":
+        show_game_over(winner)
+
+    pygame.display.flip()
+
+    # Events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if game_state == "start" and event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            game_state = "play"
+        if game_state == "game_over" and event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+            game_state = "start"
+            score1 = 0
+            score2 = 0
+            reset_positions()
+
+    clock.tick(60)
+
+pygame.quit()
+sys.exit()
