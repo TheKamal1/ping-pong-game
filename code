@@ -15,7 +15,7 @@ BLACK = (0, 0, 0)
 # Game Settings
 paddle_width, paddle_height = 10, 100
 ball_size = 15
-win_score = 5
+win_score = 10
 
 # Fonts
 font = pygame.font.SysFont(None, 40)
